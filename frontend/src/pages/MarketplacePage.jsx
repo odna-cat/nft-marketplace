@@ -14,17 +14,16 @@ export function MarketplacePage({ marketplace, account, chainId, txHash }) {
   const loadListings = useCallback(async () => {
     if (!marketplace || !marketplace.contractsConfigured) return;
     setFetching(true);
-    try {
-      // Scan tokenIds 0–49
-      const results = await Promise.all(
-        Array.from({ length: 50 }, (_, i) => i).map(async (tokenId) => {
-          try {
+              try {
+                // Scan tokenIds 0–49
+                const results = await Promise.all(
+                  Array.from({ length: 50 }, (_, i) => i).map(async (tokenId) => {
+                    try {
             const listing = await marketplace.getListing(tokenId);
             if (!listing || listing.price === 0n) return null;
 
-            // Fetch ArtPiece metadata: { title, createdAt, royaltyBps, royaltyReceiver }
             let artPiece = { title: `Token #${tokenId}`, createdAt: 0n, royaltyBps: 0, royaltyReceiver: "" };
-            try { artPiece = await marketplace.getArtPiece(tokenId); } catch {}
+            try { artPiece = await marketplace.getArtPiece(tokenId); } catch { return null; }
 
             return {
               tokenId,
@@ -35,14 +34,12 @@ export function MarketplacePage({ marketplace, account, chainId, txHash }) {
               royaltyBps:      artPiece.royaltyBps,
               royaltyReceiver: artPiece.royaltyReceiver,
             };
-          } catch {
-            return null;
-          }
+          } catch { return null; }
         })
       );
       setListings(results.filter(Boolean).sort((a, b) => a.tokenId - b.tokenId));
     } catch (e) {
-      toast.error("Failed to load listings: " + e.message);
+      toast.error("Failed to load listings: " + e);
     } finally {
       setFetching(false);
     }
@@ -58,7 +55,7 @@ export function MarketplacePage({ marketplace, account, chainId, txHash }) {
       toast.success(`"${title}" bought for ${priceEth} ETH — royalties distributed atomically!`);
       loadListings();
     } else {
-      toast.error(result.error);
+      console.error(result.error);
     }
   }
 

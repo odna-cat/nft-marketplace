@@ -77,12 +77,12 @@ export function MintPage({ marketplace, account, chainId, txHash }) {
 
       <TxStatus hash={txHash} chainId={chainId} />
 
-      {account && !isOwner && (
+      {/* {account && !isOwner && (
         <div className="callout callout-info" style={{ marginBottom: "1rem" }}>
           Connected as <code>{fmt(account)}</code> — this wallet is <strong>not</strong> the NFT contract owner.
           Only the owner can mint.
         </div>
-      )}
+      )} */}
       {!account && (
         <div className="callout callout-info" style={{ marginBottom: "1rem" }}>
           Connect your wallet to mint.

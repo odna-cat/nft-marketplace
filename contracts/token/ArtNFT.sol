@@ -15,7 +15,19 @@ contract ArtNFT is ERC721URIStorage, MyOwnable, IERC2981 {
         uint96  royaltyBps;
         address royaltyReceiver;
     }
+    struct RoyaltyInfo {
+    address receiver;
+    uint96 feeNumerator;
+    }
 
+    function getRoyalties(uint256 tokenId) external view returns (RoyaltyInfo[] memory) {
+        RoyaltyInfo[] memory royalties = new RoyaltyInfo[](1);
+        royalties[0] = RoyaltyInfo({
+            receiver: artPieces[tokenId].royaltyReceiver,
+            feeNumerator: artPieces[tokenId].royaltyBps
+        });
+        return royalties;
+    }
     mapping(uint256 => ArtPiece) public artPieces;
 
     event ArtMinted(uint256 indexed tokenId, string title, address indexed collector);

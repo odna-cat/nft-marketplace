@@ -1,14 +1,11 @@
-pragma solidity ^0.4.24;
-
-import "../math/SafeMath.sol";
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
 
 /**
  * @title PaymentSplitter
- * @dev This contract can be used when payments need to be received by a group
- * of people and split proportionately to some number of shares they own.
+ * @dev Splits payments proportionately among payees based on shares.
  */
 contract PaymentSplitter {
-    using SafeMath for uint256;
 
     event PayeeAdded(address account, uint256 shares);
     event PaymentReleased(address to, uint256 amount);
@@ -21,68 +18,58 @@ contract PaymentSplitter {
     mapping(address => uint256) private _released;
     address[] private _payees;
 
-    constructor(address[] payees, uint256[] shares) public payable {
-        require(payees.length == shares.length);
-        require(payees.length > 0);
+    constructor(address[] memory payees, uint256[] memory shares) payable {
+        require(payees.length == shares.length, "PaymentSplitter: length mismatch");
+        require(payees.length > 0, "PaymentSplitter: no payees");
 
         for (uint256 i = 0; i < payees.length; i++) {
             _addPayee(payees[i], shares[i]);
         }
     }
 
-    // payable fallback
-    function() external payable {
+    receive() external payable {
         emit PaymentReceived(msg.sender, msg.value);
     }
 
-    // return the total shares of the contract
     function totalShares() public view returns (uint256) {
         return _totalShares;
     }
 
-    // return total amount already released
     function totalReleased() public view returns (uint256) {
         return _totalReleased;
     }
 
-    // return the amount already released to an account
     function released(address account) public view returns (uint256) {
         return _released[account];
     }
 
-    // return address of a payee
     function payee(uint256 index) public view returns (address) {
         return _payees[index];
     }
 
-    // Release of the payee's proportional payment
-    function release(address account) public {
-        require(_shares[account] > 0);
+    function release(address payable account) public {
+        require(_shares[account] > 0, "PaymentSplitter: account has no shares");
 
-        uint256 totalReceived = address(this).balance.add(_totalReleased);
-        uint256 payment = totalReceived
-            .mul(_shares[account])
-            .div(_totalShares)
-            .sub(_released[account]);
+        uint256 totalReceived = address(this).balance + _totalReleased;
+        uint256 payment = (totalReceived * _shares[account] / _totalShares) - _released[account];
 
-        require(payment != 0);
+        require(payment > 0, "PaymentSplitter: account is not due payment");
 
-        _released[account] = _released[account].add(payment);
-        _totalReleased = _totalReleased.add(payment);
+        _released[account] += payment;
+        _totalReleased += payment;
 
         account.transfer(payment);
         emit PaymentReleased(account, payment);
     }
 
-    // Add new payee to the contract
     function _addPayee(address account, uint256 shares_) private {
-        require(account != address(0));
-        require(shares_ > 0);
-        require(_shares[account] == 0);
+        require(account != address(0), "PaymentSplitter: zero address");
+        require(shares_ > 0, "PaymentSplitter: shares are 0");
+        require(_shares[account] == 0, "PaymentSplitter: account already has shares");
 
         _payees.push(account);
         _shares[account] = shares_;
-        _totalShares = _totalShares.add(shares_);
+        _totalShares += shares_;
         emit PayeeAdded(account, shares_);
     }
 }

@@ -122,4 +122,11 @@ export const MARKETPLACE_ABI = [
     name: "ListingCancelled",
     type: "event",
   },
+  {
+    inputs: [{ name: "recipient", type: "address" }],
+    name: "withdrawFor",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
 ];

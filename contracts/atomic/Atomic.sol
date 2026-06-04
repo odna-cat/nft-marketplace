@@ -294,4 +294,12 @@ contract NFTMarketplace is ReentrancyGuard {
     {
         return pendingWithdrawals[user];
     }
+    function withdrawFor(address payable recipient) external nonReentrant {
+        uint256 amount = pendingWithdrawals[recipient];
+        require(amount > 0, "No funds available");
+        pendingWithdrawals[recipient] = 0;
+        (bool success, ) = recipient.call{ value: amount }("");
+        require(success, "ETH transfer failed");
+        emit Withdrawal(recipient, amount);
+    }
 }

@@ -66,17 +66,29 @@ export function RoyaltiesPage({ marketplace, account, chainId, txHash }) {
     }
   }
 
-  async function handleRelease(payeeAddr) {
-    setReleasing((r) => ({ ...r, [payeeAddr]: true }));
-    const result = await marketplace.releaseSplitter(splitterAddr, payeeAddr);
-    setReleasing((r) => ({ ...r, [payeeAddr]: false }));
-    if (result.ok) {
-      toast.success(`Released funds to ${fmt(payeeAddr)}`);
-      loadSplitter(); // refresh
-    } else {
-      toast.error(result.error);
+async function handleRelease(payeeAddr) {
+  setReleasing((r) => ({ ...r, [payeeAddr]: true }));
+  // Step 1: pull ETH from marketplace into splitter (only if needed)
+  const splitterBal = await marketplace.getSplitterInfo(splitterAddr);
+  const mpBal = await marketplace.getPendingBalance(splitterAddr);
+  if (mpBal > 0n) {
+    const pull = await marketplace.withdrawFor(splitterAddr);
+    if (!pull.ok) {
+      toast.error("Pull failed: " + pull.error);
+      setReleasing((r) => ({ ...r, [payeeAddr]: false }));
+      return;
     }
   }
+  // Step 2: release from splitter to payee
+  const result = await marketplace.releaseSplitter(splitterAddr, payeeAddr);
+  setReleasing((r) => ({ ...r, [payeeAddr]: false }));
+  if (result.ok) {
+    toast.success(`Released to ${fmt(payeeAddr)}`);
+    loadSplitter();
+  } else {
+    toast.error("Release failed: " + result.error);
+  }
+}
 
   const hasFunds = pendingWei !== null && pendingWei > 0n;
 
