@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "./interfaces/IERC721.sol";
 
 // Implements IERC721Metadata — the full standard including name/symbol/tokenURI
 abstract contract MyERC721 is IERC721Metadata {
@@ -101,6 +100,13 @@ abstract contract MyERC721 is IERC721Metadata {
         if (!_isApprovedOrOwner(msg.sender, tokenId))
             revert NotApprovedOrOwner(msg.sender);
         _transfer(from, to, tokenId);
+    }
+
+    // safeTransferFrom without data
+    function safeTransferFrom(address from, address to, uint256 tokenId)
+        public override
+    {
+        safeTransferFrom(from, to, tokenId, "");
     }
 
     // safeTransferFrom with data — the full version both above call
